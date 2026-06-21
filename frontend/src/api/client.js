@@ -40,7 +40,7 @@ export const experimentsApi = {
 export const createExperimentSocket = (experimentId) => {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
   const base = `${protocol}://${window.location.host}`
-  return new WebSocket(`${base}/ws/experiments/ws/${experimentId}`)
+  return new WebSocket(`${base}/api/experiments/ws/${experimentId}`)
 }
 
 export default api
