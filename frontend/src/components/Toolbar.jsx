@@ -1,4 +1,4 @@
-import { Play, Save, Trash2, Database, ChevronDown, AlertCircle } from 'lucide-react'
+import { Play, Save, Download, Trash2, Database, ChevronDown, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import usePipelineStore from '../store/pipelineStore'
 import { pipelinesApi, experimentsApi, createExperimentSocket } from '../api/client'
@@ -119,6 +119,7 @@ export default function Toolbar() {
     setPipelineMeta, clearCanvas,
     startExperiment, appendLog, finishExperiment,
     experimentStatus,
+    lastExperimentId,
   } = usePipelineStore()
 
   const [saving, setSaving] = useState(false)
@@ -164,6 +165,7 @@ export default function Toolbar() {
       const ws = createExperimentSocket(expId)
       ws.onmessage = (evt) => {
         const msg = JSON.parse(evt.data)
+        console.log('WS message:', msg) 
         if (msg.type === 'log') appendLog(msg.message)
         if (msg.type === 'done') {
           finishExperiment(msg)
@@ -176,8 +178,17 @@ export default function Toolbar() {
     }
   }
 
+  const handleExport = () => {
+  window.open(
+    `http://localhost:8000/api/experiments/download/${lastExperimentId}`,
+    '_blank'
+  )
+}
+
   const isRunning = experimentStatus === 'running'
 
+  console.log('TOOLBAR →', { lastExperimentId, experimentStatus })
+  
   return (
     <header className="h-12 bg-panel border-b border-border flex items-center px-4 gap-4 shrink-0">
       {/* Brand */}
@@ -239,6 +250,16 @@ export default function Toolbar() {
       >
         <Save size={13} />
         {saving ? 'Saving…' : 'Save'}
+      </button>
+
+      <button
+        onClick={handleExport}
+        disabled={!lastExperimentId || experimentStatus === 'running'}
+        title={!lastExperimentId ? 'Erst ein Experiment erfolgreich abschließen' : 'Modell als ONNX exportieren'}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border border-border text-text-secondary hover:text-text-primary hover:border-border-light transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+>
+        <Download size={13} />
+        Export
       </button>
 
       <button

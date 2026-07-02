@@ -15,7 +15,10 @@ from datetime import datetime
 
 import pandas as pd
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+import joblib
+from pathlib import Path
 
 from app.db.base import SessionLocal, get_db
 from app.db.models import Dataset, Experiment, Pipeline
@@ -23,6 +26,9 @@ from app.ml.node_registry import NODE_REGISTRY
 from app.ml.pipeline_builder import build_sklearn_pipeline, evaluate_pipeline
 from app.ml.tuner import tune_pipeline
 from app.schemas.pipeline import ExperimentResponse
+
+MODELS_DIR = Path("models")
+MODELS_DIR.mkdir(exist_ok=True)
 
 router = APIRouter()
 
@@ -127,6 +133,9 @@ def _run_experiment(experiment_id: str, pipeline_id: str) -> None:
         experiment.log = "\n".join(_logs.get(experiment_id, []))
         db.commit()
 
+        # ── Save model ─────────────────────────────────────────────────
+        joblib.dump(sklearn_pipe, MODELS_DIR / f"{experiment_id}.pkl")
+
     except Exception as exc:
         _log(experiment_id, f"❌ ERROR: {exc}")
         exp = db.query(Experiment).filter(Experiment.id == experiment_id).first()
@@ -171,6 +180,17 @@ def get_experiment(experiment_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Experiment not found.")
     return exp
 
+@router.get("/download/{experiment_id}")
+def download_model(experiment_id: str):
+    model_path = MODELS_DIR / f"{experiment_id}.pkl"
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail="Modell nicht gefunden – Experiment erst ausführen")
+    return FileResponse(
+        path=model_path,
+        filename=f"model_{experiment_id}.pkl",
+        media_type="application/octet-stream",
+    )
+
 
 # ── WebSocket live log stream ─────────────────────────────────────────────────
 
@@ -197,15 +217,16 @@ async def experiment_ws(websocket: WebSocket, experiment_id: str):
                 db.refresh(exp)
 
             if exp and exp.status in ("completed", "failed"):
-                await websocket.send_json(
-                    {
-                        "type": "done",
-                        "status": exp.status,
-                        "metrics": exp.metrics,
-                        "best_params": exp.best_params,
-                        "duration_s": exp.duration_s,
-                    }
-                )
+                payload = {
+                    "type": "done",
+                    "status": exp.status,
+                    "metrics": exp.metrics,
+                    "experiment_id": experiment_id,
+                    "best_params": exp.best_params,
+                    "duration_s": exp.duration_s,
+                }
+                print(f"[WS SEND] {payload}", flush=True)   # ← Debug
+                await websocket.send_json(payload)
                 break
 
             await asyncio.sleep(0.5)

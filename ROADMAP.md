@@ -22,7 +22,7 @@ Nächste Schritte – macht die Platform von "es funktioniert" zu "ich verstehe 
 - [ ] ROC Kurve & AUC (Modellvergleich)
 - [ ] Dataset Explorer (Histogramme, Korrelationsmatrix nach Upload)
 - [ ] Performance over Time (Metriken aller Experimente im Linechart)
-- [ ] Modell Export als `.pkl` (Download-Button nach Training)
+- [x] Modell Export als `.pkl` (Download-Button nach Training)
 
 ---
 

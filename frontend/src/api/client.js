@@ -34,6 +34,7 @@ export const experimentsApi = {
   run:  (pipelineId) => api.post(`/experiments/run/${pipelineId}`),
   list: ()           => api.get('/experiments/'),
   get:  (id)         => api.get(`/experiments/${id}`),
+  exportModel: (id)  => api.get(`/experiments/download/${id}`),
 }
 
 // ── WebSocket factory ─────────────────────────────────────────────────────────

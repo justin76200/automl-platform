@@ -65,6 +65,7 @@ const usePipelineStore = create((set, get) => ({
 
   // ── Experiment ──────────────────────────────────────────────────────
   activeExperiment:   null,
+  lastExperimentId:   null,
   experimentStatus:   null,  // pending | running | completed | failed
   experimentMetrics:  null,
   experimentLogs:     [],
@@ -82,8 +83,11 @@ const usePipelineStore = create((set, get) => ({
   appendLog: (line) =>
     set((s) => ({ experimentLogs: [...s.experimentLogs, line] })),
 
-  finishExperiment: ({ status, metrics, best_params }) =>
-    set({ experimentStatus: status, experimentMetrics: metrics, experimentBestParams: best_params }),
+  finishExperiment: (msg = {}) =>
+    set((s) => ({ experimentStatus: msg.status || 'completed', 
+      experimentMetrics: msg.metrics || null, 
+      experimentBestParams: msg.best_params || null, 
+      lastExperimentId: msg.experiment_id || null, })),
 }))
 
 export default usePipelineStore
