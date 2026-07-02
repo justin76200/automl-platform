@@ -104,6 +104,10 @@ Nur in `backend/app/ml/node_registry.py` einen Eintrag ergänzen:
 
 → Node erscheint automatisch im Frontend-Panel. Kein weiterer Code nötig.
 
+## Vorschau
+
+![Demo](docs/demo.gif)
+
 ## Nächste Schritte
 
 - [ ] Feature Importance Charts (SHAP)
